@@ -1,0 +1,22 @@
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
+contextBridge.exposeInMainWorld('studio', {
+  importMedia: (paths) => ipcRenderer.invoke('import', paths),
+  droppedPath: (file) => webUtils.getPathForFile(file),
+  demo: () => ipcRenderer.invoke('demo'),
+  save: (p, file) => ipcRenderer.invoke('save', p, file),
+  autosave: (record) => ipcRenderer.invoke('autosave', record),
+  clearRecovery: () => ipcRenderer.invoke('recovery-clear'),
+  listRecovery: () => ipcRenderer.invoke('recovery-list'),
+  restoreRecovery: (id) => ipcRenderer.invoke('recovery-restore', id),
+  discardRecovery: (id) => ipcRenderer.invoke('recovery-discard', id),
+  listPresets: () => ipcRenderer.invoke('presets-list'),
+  savePreset: (name, style, id) => ipcRenderer.invoke('preset-save', name, style, id),
+  deletePreset: (id) => ipcRenderer.invoke('preset-delete', id),
+  open: () => ipcRenderer.invoke('open'),
+  exportNative: (p, assets, options) => ipcRenderer.invoke('export-native', p, assets, options),
+  onExportProgress: (fn) => ipcRenderer.on('export-progress', (_, value) => fn(value)),
+  exportCancel: () => ipcRenderer.invoke('export-cancel'),
+  revealExport: () => ipcRenderer.invoke('reveal-export'),
+  onClose: (fn) => ipcRenderer.on('request-close', () => fn()),
+  close: () => ipcRenderer.invoke('close-confirmed'),
+});

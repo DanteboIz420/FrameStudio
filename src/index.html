@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' frame-media:; connect-src 'self' frame-media:"
+    />
+    <title>Frame Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">f<span>•</span></span>
+        <div>frame<span class="brand-sub">STUDIO</span></div>
+      </div>
+      <div class="project-heading">
+        <input id="project-name" aria-label="Project name" value="Untitled project" /><span
+          id="save-state"
+          >LOCAL PROJECT</span
+        >
+      </div>
+      <div class="top-actions">
+        <button id="new-project" class="quiet" title="New project">New</button
+        ><button id="open-project" class="quiet" title="Open project · Ctrl+O">Open</button
+        ><button id="save-project" title="Save project · Ctrl+S">Save project</button
+        ><button id="export" class="primary"><span>↗</span> Export video</button>
+      </div>
+    </header>
+    <main>
+      <aside class="library">
+        <div class="panel-heading">
+          <span>Media library</span><span id="media-count" class="count">0</span>
+        </div>
+        <button id="import" class="import-button">
+          <span>＋</span> Add recordings <kbd>Ctrl I</kbd>
+        </button>
+        <div class="library-note">Your work. Ready for its close-up.</div>
+        <div id="media-list"></div>
+        <div id="library-empty">
+          <div class="empty-icon">▱</div>
+          <p>A little less editing.<br />A lot more showing off.</p>
+          <small>Drop your recordings here.<br />MP4, MOV, WebM & MKV</small
+          ><button id="demo" class="text-button">Explore a sample project ↗</button>
+        </div>
+        <div class="library-bottom">
+          <button id="recover-project" class="text-button" hidden>Recover a session</button
+          ><br /><span class="status-dot"></span> All yours. All local.<br /><small
+            >No uploads. No accounts.</small
+          >
+        </div>
+      </aside>
+      <section class="workspace">
+        <div class="preview-toolbar">
+          <div>
+            <span class="eyebrow">COMPOSITION</span><span id="composition-label">Landscape</span>
+          </div>
+          <div class="preview-tags">
+            <span id="resolution-label">1920 × 1080</span><span id="fps-label">60 FPS</span
+            ><span class="muted-tag">◌ MUTED</span>
+          </div>
+        </div>
+        <div id="stage-wrap">
+          <canvas
+            id="stage"
+            width="1920"
+            height="1080"
+            aria-label="Video composition preview"
+          ></canvas>
+          <div id="welcome">
+            <span class="welcome-pill">A SMALL STUDIO FOR BIG IDEAS</span>
+            <h1>Good work.<br /><em>Beautifully framed.</em></h1>
+            <p>Turn your screen recordings into<br />something worth stopping the scroll for.</p>
+            <button id="welcome-import" class="primary">＋ Add your first recording</button
+            ><span class="welcome-hint">or drop a video anywhere</span>
+          </div>
+        </div>
+        <div class="transport">
+          <div class="transport-left">
+            <button id="go-start" class="icon-button" title="Go to beginning · Home">|◀</button
+            ><button id="play" class="play-button" title="Play / pause · Space">▶</button
+            ><span class="timecode"
+              ><b id="current-time">00:00.00</b><span>/</span
+              ><span id="total-time">00:00.00</span></span
+            >
+          </div>
+          <div class="transport-right">
+            <span id="preview-status">Fit to view</span><span class="divider"></span
+            ><button id="shortcuts" class="quiet">⌨ Shortcuts</button>
+          </div>
+        </div>
+      </section>
+      <aside class="inspector">
+        <div class="inspector-tabs">
+          <button class="active" data-tab="canvas">Canvas</button
+          ><button data-tab="clip">Clip <span id="clip-dot"></span></button>
+        </div>
+        <div id="canvas-panel" class="inspector-content">
+          <section class="style-presets">
+            <div class="section-label">YOUR STYLES <span>SAVED ON THIS COMPUTER</span></div>
+            <select id="style-list" aria-label="Saved styles">
+              <option value="">Choose a saved style…</option>
+            </select>
+            <div class="preset-actions">
+              <button id="apply-style" disabled>Apply</button
+              ><button id="save-style">Save current</button
+              ><button id="delete-style" class="quiet" disabled title="Delete saved style">
+                ×
+              </button>
+            </div>
+          </section>
+          <section>
+            <div class="section-label">FORMAT <span>01</span></div>
+            <div class="formats">
+              <button data-format="1920,1080" class="active">
+                <i class="landscape"></i>Landscape<small>16:9</small></button
+              ><button data-format="1080,1080">
+                <i class="square"></i>Square<small>1:1</small></button
+              ><button data-format="1080,1920">
+                <i class="portrait"></i>Portrait<small>9:16</small>
+              </button>
+            </div>
+            <div class="dimensions">
+              <label
+                >W
+                <input
+                  id="canvas-width"
+                  type="number"
+                  min="320"
+                  max="3840"
+                  step="2"
+                  value="1920" /></label
+              ><span>×</span
+              ><label
+                >H
+                <input id="canvas-height" type="number" min="320" max="3840" step="2" value="1080"
+              /></label>
+            </div>
+            <label class="field-label fps-field"
+              >Export frame rate<select id="export-fps">
+                <option value="24">24 fps</option>
+                <option value="25">25 fps</option>
+                <option value="30">30 fps · faster export</option>
+                <option value="50">50 fps</option>
+                <option value="60" selected>60 fps · smoothest</option>
+              </select></label
+            >
+          </section>
+          <section>
+            <div class="section-label">LAYOUT <span>02</span></div>
+            <div class="layouts">
+              <button data-layout="single" class="active" title="Single featured video">
+                <i>▭</i></button
+              ><button data-layout="two" title="Two columns"><i>▯▯</i></button
+              ><button data-layout="three" title="Three columns"><i>▯▯▯</i></button
+              ><button data-layout="four" title="2 × 2 grid"><i>⊞</i></button
+              ><button data-layout="six" title="2 × 3 grid"><i>▦</i></button>
+            </div>
+            <div id="layout-note" class="help-text">One video, center stage.</div>
+            <label class="slider-label">Padding <output id="padding-value">100 px</output></label
+            ><input data-project="padding" type="range" min="0" max="400" value="100" /><label
+              class="slider-label"
+              >Grid gap <output id="gap-value">28 px</output></label
+            ><input data-project="gap" type="range" min="0" max="150" value="28" />
+          </section>
+          <section>
+            <div class="section-label">FINISH <span>03</span></div>
+            <label class="slider-label"
+              >Corner radius <output id="radius-value">24 px</output></label
+            ><input data-project="radius" type="range" min="0" max="150" value="24" /><label
+              class="slider-label"
+              >Soft shadow <output id="shadow-value">45%</output></label
+            ><input data-project="shadow" type="range" min="0" max="100" value="45" />
+          </section>
+          <section>
+            <div class="section-label">BACKGROUND <span>04</span></div>
+            <div class="segmented">
+              <button data-bg="blur" class="active">Live blur</button
+              ><button data-bg="gradient">Gradient</button><button data-bg="solid">Solid</button>
+            </div>
+            <div class="color-row">
+              <label for="bg-color">Base color</label
+              ><input id="bg-color" type="color" value="#20262b" />
+            </div>
+            <div id="blur-settings">
+              <label class="slider-label">Blur <output id="blur-value">55 px</output></label
+              ><input data-project="blur" type="range" min="0" max="100" value="55" /><label
+                class="slider-label"
+                >Video opacity <output id="opacity-value">55%</output></label
+              ><input data-project="opacity" type="range" min="0" max="100" value="55" /><label
+                class="slider-label"
+                >Background zoom <output id="backgroundZoom-value">115%</output></label
+              ><input data-project="backgroundZoom" type="range" min="100" max="200" value="115" />
+              <p class="help-text">
+                An enlarged, blurred copy of the first active video. Always in sync.
+              </p>
+            </div>
+          </section>
+        </div>
+        <div id="clip-panel" class="inspector-content" hidden>
+          <div id="no-clip" class="help-text">Select a clip in the timeline to make it yours.</div>
+          <div id="clip-controls" hidden>
+            <section>
+              <div class="section-label">SELECTED CLIP</div>
+              <h3 id="clip-name"></h3>
+              <label class="field-label">Grid cell<select id="clip-slot"></select></label
+              ><label class="slider-label">Speed <output id="speed-value">1×</output></label
+              ><input id="clip-speed" type="range" min="1" max="3" step="0.1" value="1" />
+              <div class="speed-presets">
+                <button data-speed="1">1×</button><button data-speed="1.5">1.5×</button
+                ><button data-speed="2">2×</button><button data-speed="3">3×</button>
+              </div>
+              <p class="help-text">Speed changes ripple later clips in this cell.</p>
+            </section>
+            <section>
+              <div class="section-label">FRAMING</div>
+              <label class="slider-label">Scale <output id="scale-value">100%</output></label
+              ><input id="clip-scale" type="range" min="0.2" max="2" step="0.01" value="1" />
+              <div class="dimensions position-inputs">
+                <label
+                  >X
+                  <input id="clip-x" type="number" min="-100" max="100" step="1" value="0" /></label
+                ><label
+                  >Y <input id="clip-y" type="number" min="-100" max="100" step="1" value="0"
+                /></label>
+              </div>
+              <button id="reset-position" class="wide quiet">↺ Reset framing</button>
+              <p class="help-text">Drag the video in the preview to position it.</p>
+            </section>
+            <section>
+              <div class="section-label">SOURCE TRIM <span>SECONDS</span></div>
+              <div class="dimensions">
+                <label>In <input id="clip-in" type="number" min="0" step="0.01" /></label
+                ><label>Out <input id="clip-out" type="number" min="0" step="0.01" /></label>
+              </div>
+              <div class="clip-actions">
+                <button id="duplicate">Duplicate</button
+                ><button id="delete-clip" class="danger">Delete</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </aside>
+      <section class="timeline">
+        <div class="timeline-toolbar">
+          <div class="timeline-title">Timeline <span id="clip-count">0 clips</span></div>
+          <div class="edit-tools">
+            <button id="undo" class="icon-button" title="Undo · Ctrl+Z">↶</button
+            ><button id="redo" class="icon-button" title="Redo · Ctrl+Shift+Z">↷</button
+            ><span class="divider"></span
+            ><button id="split" title="Split at playhead · Ctrl+Shift+C">
+              ✂ <span>Split</span><kbd>⇧ C</kbd></button
+            ><button
+              id="ripple"
+              class="quiet"
+              title="Pack all clips together in each track, removing gaps and overlaps"
+            >
+              Snap all together</button
+            ><button
+              id="insert-mode"
+              class="quiet"
+              aria-pressed="false"
+              title="Insert mode: push clips aside to make room. Off: allow overlap."
+            >
+              Insert: Off
+            </button>
+          </div>
+          <div class="zoom-tools">
+            <span>−</span
+            ><input
+              id="timeline-zoom"
+              aria-label="Timeline zoom"
+              type="range"
+              min="12"
+              max="160"
+              value="55"
+            /><span>＋</span>
+          </div>
+        </div>
+        <div class="timeline-body">
+          <div class="track-headers">
+            <div class="ruler-label">VIDEO / MUTED</div>
+            <div id="lane-labels"></div>
+          </div>
+          <div id="timeline-scroll">
+            <div id="timeline-content">
+              <div id="ruler"></div>
+              <div id="lanes"></div>
+              <div id="playhead"><span></span><i></i></div>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-footer">
+          <span><span class="status-dot"></span> Designed for your next post</span
+          ><span>Drag to move · Pull edges to trim · Space to play</span>
+        </div>
+      </section>
+    </main>
+    <div id="toast" role="status"></div>
+    <dialog id="export-dialog">
+      <div class="export-icon">↗</div>
+      <span class="eyebrow">THE FINAL TOUCH</span>
+      <h2 id="export-title">Making it share-worthy.</h2>
+      <p id="export-description">Rendering your composition locally.</p>
+      <div class="export-specs">
+        <span id="export-size">1920 × 1080</span><span id="export-fps-label">60 FPS</span
+        ><span>MP4 · MUTED</span>
+      </div>
+      <progress id="export-progress" max="1" value="0"></progress>
+      <div class="export-status">
+        <span id="export-percent">0%</span><span id="export-eta">Preparing frames…</span>
+      </div>
+      <button id="cancel-export" class="wide">Cancel export</button
+      ><button id="reveal-export" class="primary wide" hidden>Show in folder ↗</button
+      ><button id="close-export" class="quiet wide" hidden>Back to editing</button>
+    </dialog>
+    <dialog id="shortcut-dialog">
+      <span class="eyebrow">A LITTLE FASTER</span>
+      <h2>Keep your hands on the keys.</h2>
+      <dl>
+        <dt>Play / pause</dt>
+        <dd>Space</dd>
+        <dt>Split selected clip</dt>
+        <dd>Ctrl Shift C / S</dd>
+        <dt>Undo / redo</dt>
+        <dd>Ctrl Z / Ctrl Shift Z</dd>
+        <dt>Import recordings</dt>
+        <dd>Ctrl I</dd>
+        <dt>Save / save as</dt>
+        <dd>Ctrl S / Ctrl Alt S</dd>
+        <dt>Open project</dt>
+        <dd>Ctrl O</dd>
+        <dt>Delete selected clip</dt>
+        <dd>Delete</dd>
+        <dt>Step one frame</dt>
+        <dd>← / →</dd>
+        <dt>Jump one second</dt>
+        <dd>Shift ← / →</dd>
+        <dt>Go to beginning / end</dt>
+        <dd>Home / End</dd>
+        <dt>Move without snapping</dt>
+        <dd>Alt + drag</dd>
+      </dl>
+      <button id="close-shortcuts" class="primary wide">Got it</button>
+    </dialog>
+
+    <dialog id="export-settings" class="export-panel">
+      <div class="export-panel-heading">
+        <div>
+          <span class="eyebrow">MAKE IT READY TO SHARE</span>
+          <h2>One last look.</h2>
+          <p>Choose your moment, then make it yours.</p>
+        </div>
+        <button id="dismiss-export-settings" class="icon-button" aria-label="Close export settings">
+          ×
+        </button>
+      </div>
+      <div class="export-panel-grid">
+        <div class="export-review">
+          <div class="export-review-canvas">
+            <canvas
+              id="export-preview"
+              width="960"
+              height="540"
+              aria-label="Export range preview"
+            ></canvas>
+          </div>
+          <div class="export-preview-transport">
+            <button id="range-preview-play" title="Play selected range">▶ Play range</button
+            ><span id="range-preview-time">00:00.00</span
+            ><span class="muted-tag">MP4 · H.264 · MUTED</span>
+          </div>
+          <div class="range-heading"><span>EXPORT RANGE</span><span id="range-summary"></span></div>
+          <div id="range-ruler"></div>
+          <div id="range-timeline">
+            <div id="range-tracks"></div>
+            <div id="range-shade-left" class="range-shade"></div>
+            <div id="range-shade-right" class="range-shade"></div>
+            <div id="range-selection">
+              <button id="range-in-handle" aria-label="Drag range start" title="Drag range start">
+                ⠿</button
+              ><button id="range-out-handle" aria-label="Drag range end" title="Drag range end">
+                ⠿
+              </button>
+            </div>
+            <div id="range-playhead"></div>
+          </div>
+          <div class="range-quick">
+            <button id="range-full">Full project</button
+            ><button id="range-clip">Selected clip</button
+            ><button id="range-test">First 5 seconds</button>
+          </div>
+          <p class="help-text">
+            Drag the handles to trim. Drag the middle to move the range. Click the ruler to scrub.
+          </p>
+        </div>
+        <div class="export-options">
+          <div class="section-label">TIME <span>SECONDS</span></div>
+          <div class="range-numbers">
+            <label>Start<input id="range-start" type="number" min="0" step="0.001" /></label
+            ><span>→</span
+            ><label>End<input id="range-end" type="number" min="0" step="0.001" /></label>
+          </div>
+          <div class="range-quick">
+            <button id="range-start-here">Start at playhead</button
+            ><button id="range-end-here">End at playhead</button>
+          </div>
+          <div class="section-label export-video-heading">VIDEO SETTINGS</div>
+          <label class="field-label"
+            >Output size<select id="output-resolution">
+              <option value="canvas">Match canvas</option>
+              <option value="720">720p</option>
+              <option value="1080">1080p</option>
+              <option value="1440">1440p</option>
+              <option value="2160">4K · 2160p</option>
+            </select></label
+          ><label class="field-label"
+            >Frame rate<select id="output-fps">
+              <option>24</option>
+              <option>25</option>
+              <option>30</option>
+              <option>50</option>
+              <option>60</option>
+            </select></label
+          ><label class="field-label"
+            >Quality<select id="output-quality">
+              <option value="draft">Draft · quickest</option>
+              <option value="high" selected>High · balanced</option>
+              <option value="ultra">Ultra · maximum detail</option>
+            </select></label
+          >
+          <p id="quality-help" class="help-text"></p>
+          <div id="output-summary" class="output-summary"></div>
+          <p id="range-error" class="range-error" role="alert"></p>
+        </div>
+      </div>
+      <div class="export-panel-footer">
+        <span>Original footage and timeline edits stay intact.</span
+        ><button id="begin-export" class="primary">↗ Export selected range</button>
+      </div>
+    </dialog>
+    <dialog id="save-style-dialog">
+      <span class="eyebrow">YOUR SIGNATURE LOOK</span>
+      <h2>Keep this style.</h2>
+      <p>
+        Canvas, layout, spacing, corners, shadows and background. Ready for your next recording.
+      </p>
+      <label class="field-label"
+        >Preset name<input id="style-name" maxlength="80" placeholder="My Twitter setup"
+      /></label>
+      <div class="dialog-actions">
+        <button id="cancel-save-style" class="quiet">Cancel</button
+        ><button id="confirm-save-style" class="primary">Save style</button>
+      </div>
+    </dialog>
+    <dialog id="recovery-dialog">
+      <span class="eyebrow">RIGHT WHERE YOU LEFT OFF</span>
+      <h2>Your work is still here.</h2>
+      <p>These editing sessions have an autosaved recovery. Choose one to continue.</p>
+      <div id="recovery-list"></div>
+      <div class="dialog-actions">
+        <button id="later-recovery" class="quiet">Later</button
+        ><button id="discard-recovery" class="quiet">Discard selected</button
+        ><button id="restore-recovery" class="primary">Restore session</button>
+      </div>
+    </dialog>
+    <script type="module" src="app.mjs"></script>
+  </body>
+</html>
