@@ -8,7 +8,7 @@ A small desktop editor for turning website screen recordings into videos worth s
 
 **Trim it. Speed it up. Give it some breathing room.**
 
-<a href="https://github.com/DanteboIz420/FrameStudio/releases/download/v1.2.1/Frame-Studio-1.2.1-Windows-x64.zip"><img src="docs/media/download-windows.svg" alt="Download for Windows x64" width="244" height="48"></a>
+<a href="https://github.com/DanteboIz420/FrameStudio/releases/download/v1.2.2/Frame-Studio-1.2.2-Windows-x64.zip"><img src="docs/media/download-windows.svg" alt="Download for Windows x64" width="244" height="48"></a>
 
 [Latest release](https://github.com/DanteboIz420/FrameStudio/releases/latest) · [Quick start](#quick-start) · [How exports work](#how-exports-work) · [Build from source](#build-from-source)
 

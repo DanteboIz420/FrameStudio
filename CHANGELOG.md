@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 — Windows ZIP compatibility
+
+- Package the portable app with Windows’ ZIP implementation, without leading `./` directory entries.
+- Verify listing through Windows Explorer and extraction with Windows tooling before release.
+- Application features and the bundled video engine are unchanged.
+
 ## 1.2.1 — First public beta
 
 - Windows x64 portable release with FFmpeg and FFprobe included. Extract the ZIP and open the app; no installer, engine prompt, account or runtime download.
