@@ -116,3 +116,40 @@ test('old projects receive 60 fps and FPS validation rejects invalid values', ()
   for (const fps of [24, 25, 30, 50, 60]) assert.equal(validateProject({ ...p, fps }).fps, fps);
   assert.throws(() => validateProject({ ...p, fps: 0 }));
 });
+
+import {
+  syncCompositions,
+  switchComposition,
+  addComposition,
+  compositionProject,
+} from '../src/compositions.mjs';
+test('compositions preserve independent cuts and canvas, and clip creation rebases a copy', () => {
+  const p = fixture();
+  syncCompositions(p);
+  const original = p.activeComposition;
+  const source = structuredClone(p.clips[0]);
+  const item = addComposition(p, 'Pinterest', source);
+  assert.equal(p.clips[0].start, 0);
+  assert.equal(p.clips[0].slot, 0);
+  assert.equal(p.layout, 'single');
+  assert.equal(p.clips[0].in, source.in);
+  assert.equal(p.clips[0].out, source.out);
+  p.radius = 75;
+  p.clips[0].speed = 3;
+  switchComposition(p, original);
+  assert.notEqual(p.radius, 75);
+  assert.deepEqual(p.clips[0], source);
+  switchComposition(p, item.id);
+  assert.equal(p.radius, 75);
+  assert.equal(p.clips[0].speed, 3);
+  const saved = validateProject(JSON.parse(JSON.stringify(syncCompositions(p))));
+  assert.equal(saved.compositions.length, 2);
+  const snapshot = compositionProject(saved, saved.compositions[1]);
+  p.radius = 2;
+  assert.equal(snapshot.radius, 75);
+  assert.equal(snapshot.compositions, undefined);
+  assert.throws(() => validateProject({ ...saved, activeComposition: 'missing' }));
+  const empty = addComposition(p, 'Empty');
+  assert.equal(p.clips.length, 0);
+  assert.equal(p.media.length, 1);
+});

@@ -71,6 +71,40 @@ export function validateProject(raw) {
   if (!raw || raw.version !== 1 || !Array.isArray(raw.clips) || !Array.isArray(raw.media))
     throw Error('This is not a Frame Studio project.');
   const p = { ...defaults(), ...raw };
+  if (raw.compositions !== undefined) {
+    if (
+      !Array.isArray(raw.compositions) ||
+      !raw.compositions.length ||
+      raw.compositions.length > 200
+    )
+      throw Error('Invalid compositions.');
+    const ids = new Set();
+    for (const c of raw.compositions) {
+      if (
+        !c ||
+        typeof c.id !== 'string' ||
+        ids.has(c.id) ||
+        typeof c.name !== 'string' ||
+        !c.name.trim() ||
+        c.name.length > 120 ||
+        !c.state ||
+        c.state.compositions !== undefined
+      )
+        throw Error('Invalid composition.');
+      ids.add(c.id);
+      const checked = validateProject({
+        ...c.state,
+        version: 1,
+        media: p.media,
+        compositions: undefined,
+      });
+      const stateKeys = Object.keys(defaults()).filter(
+        (k) => !['version', 'name', 'media'].includes(k),
+      );
+      c.state = Object.fromEntries(stateKeys.map((k) => [k, checked[k]]));
+    }
+    if (!ids.has(raw.activeComposition)) throw Error('Invalid active composition.');
+  }
   if (![24, 25, 30, 50, 60].includes(p.fps)) throw Error('Choose 24, 25, 30, 50 or 60 fps.');
   if (typeof p.insertMode !== 'boolean') throw Error('Invalid insert mode.');
   const finite = (x, min, max) =>

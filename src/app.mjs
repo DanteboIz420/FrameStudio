@@ -15,6 +15,12 @@ import { Compositor } from './compositor.mjs';
 import { exportAssets } from './export-assets.mjs';
 import { styleOf, validateStyle, rangeProject, validateExport } from './project-options.mjs';
 import { setupExportPanel } from './export-panel.mjs';
+import {
+  syncCompositions,
+  switchComposition,
+  addComposition,
+  compositionProject,
+} from './compositions.mjs';
 const $ = (s) => document.querySelector(s),
   $$ = (s) => [...document.querySelectorAll(s)];
 const api = window.studio,
@@ -73,7 +79,7 @@ async function writeAutosave() {
   if (!dirty || saving || (!p.clips.length && !p.media.length && history.length === 0)) return;
   const version = revision;
   try {
-    await api.autosave({ project: clone(p), path: projectPath, time });
+    await api.autosave({ project: clone(syncCompositions(p)), path: projectPath, time });
     if (dirty && revision === version) $('#save-state').textContent = 'AUTOSAVED · UNSAVED CHANGES';
   } catch (e) {
     $('#save-state').textContent = 'AUTOSAVE FAILED · USE SAVE PROJECT';
@@ -118,6 +124,180 @@ function select(id, tab = true) {
   renderInspector();
   renderTimeline();
 }
+let exportQueue = [],
+  queueRunning = false,
+  nameAction = null;
+function renderCompositions() {
+  syncCompositions(p);
+  const list = $('#composition-list');
+  list.replaceChildren();
+  for (const item of p.compositions) {
+    const b = document.createElement('button');
+    b.className = 'composition-item' + (item.id === p.activeComposition ? ' active' : '');
+    b.textContent = item.name;
+    b.title = item.name + ' · ' + fmt(projectDuration(compositionProject(p, item)));
+    b.onclick = () => {
+      if (item.id === p.activeComposition) return;
+      checkpoint();
+      pause();
+      switchComposition(p, item.id);
+      selected = null;
+      time = 0;
+      compositor.clear();
+      render();
+    };
+    list.append(b);
+  }
+  $('#delete-composition').disabled = p.compositions.length < 2;
+}
+function askCompositionName(title, initial, action) {
+  nameAction = action;
+  $('#composition-name-title').textContent = title;
+  $('#composition-name').value = initial;
+  $('#confirm-composition-name').textContent = 'Save';
+  $('#composition-name-dialog').showModal();
+  $('#composition-name').select();
+}
+$('#cancel-composition-name').onclick = () => $('#composition-name-dialog').close();
+$('#confirm-composition-name').onclick = () => {
+  const name = $('#composition-name').value.trim();
+  if (!name) return;
+  $('#composition-name-dialog').close();
+  checkpoint();
+  pause();
+  nameAction(name);
+  selected = null;
+  time = 0;
+  compositor.clear();
+  render();
+};
+$('#composition-name').onkeydown = (e) => {
+  if (e.key === 'Enter') $('#confirm-composition-name').click();
+};
+$('#new-composition').onclick = () =>
+  askCompositionName('New composition', `Composition ${p.compositions.length + 1}`, (name) =>
+    addComposition(p, name),
+  );
+$('#rename-composition').onclick = () => {
+  const item = p.compositions.find((c) => c.id === p.activeComposition);
+  askCompositionName('Rename composition', item.name, (name) => {
+    item.name = name;
+  });
+};
+$('#duplicate-composition').onclick = () => {
+  syncCompositions(p);
+  const item = p.compositions.find((c) => c.id === p.activeComposition);
+  askCompositionName('Duplicate composition', item.name + ' copy', (name) => {
+    const copy = { ...clone(item), id: uid(), name };
+    p.compositions.push(copy);
+    switchComposition(p, copy.id);
+  });
+};
+$('#delete-composition').onclick = () => {
+  if (p.compositions.length < 2 || !confirm('Delete this composition? You can undo this.')) return;
+  checkpoint();
+  pause();
+  const id = p.activeComposition;
+  switchComposition(p, p.compositions.find((c) => c.id !== id).id);
+  p.compositions = p.compositions.filter((c) => c.id !== id);
+  selected = null;
+  time = 0;
+  compositor.clear();
+  render();
+};
+document.addEventListener('contextmenu', (e) => {
+  const el = e.target.closest('.timeline-clip');
+  if (!el || exporting) return;
+  e.preventDefault();
+  select(el.dataset.clip);
+  const menu = $('#clip-menu');
+  menu.hidden = false;
+  menu.style.left = Math.min(e.clientX, innerWidth - 260) + 'px';
+  menu.style.top = Math.min(e.clientY, innerHeight - 55) + 'px';
+});
+document.addEventListener('pointerdown', (e) => {
+  if (!e.target.closest('#clip-menu')) $('#clip-menu').hidden = true;
+});
+$('#clip-to-composition').onclick = () => {
+  $('#clip-menu').hidden = true;
+  const source = clone(clip());
+  if (!source) return;
+  askCompositionName(
+    'Create composition from clip',
+    media(source).name.replace(/\.[^.]+$/, '') + ' cut',
+    (name) => addComposition(p, name, source),
+  );
+};
+function renderQueue() {
+  $('#queue-count').textContent = exportQueue.length;
+  $('#queue-list').replaceChildren();
+  for (const [index, item] of exportQueue.entries()) {
+    const row = document.createElement('div');
+    row.className = 'queue-item';
+    const label = document.createElement('span');
+    label.textContent = `${item.project.name} · ${fmt(item.options.end - item.options.start)} · ${item.options.width} × ${item.options.height} · ${item.options.fps} fps · ${item.options.quality} — ${item.status}`;
+    const remove = document.createElement('button');
+    remove.textContent = 'Remove';
+    remove.disabled = queueRunning;
+    remove.onclick = () => {
+      exportQueue.splice(index, 1);
+      renderQueue();
+    };
+    row.append(label, remove);
+    $('#queue-list').append(row);
+  }
+  $('#run-queue').disabled = queueRunning || !exportQueue.some((i) => i.status !== 'Done');
+}
+function queueCurrent(options) {
+  syncCompositions(p);
+  const item = p.compositions.find((c) => c.id === p.activeComposition);
+  exportQueue.push({
+    project: compositionProject(p, item),
+    options: clone(options),
+    status: 'Ready',
+  });
+  renderQueue();
+  toast('Added to export queue: ' + item.name);
+}
+$('#show-queue').onclick = () => {
+  renderQueue();
+  $('#queue-status').textContent = '';
+  $('#queue-dialog').showModal();
+};
+$('#close-queue').onclick = () => $('#queue-dialog').close();
+$('#queue-all').onclick = () => {
+  syncCompositions(p);
+  for (const item of p.compositions) {
+    const project = compositionProject(p, item);
+    if (!project.clips.some((c) => c.slot < slots(project))) continue;
+    exportQueue.push({ project, options: validateExport(project, {}), status: 'Ready' });
+  }
+  renderQueue();
+};
+$('#run-queue').onclick = async () => {
+  const pending = exportQueue.filter((i) => i.status !== 'Done');
+  try {
+    const tokens = await api.queueFolder(pending.map((i) => i.project.name));
+    if (!tokens) return;
+    queueRunning = true;
+    $('#queue-dialog').close();
+    for (const [i, item] of pending.entries()) {
+      item.status = 'Exporting';
+      const result = await exportVideo({ ...item.options, queueToken: tokens[i] }, item.project);
+      $('#export-dialog').close();
+      item.status = result ? 'Done' : cancelled ? 'Canceled' : 'Failed';
+      if (!result) break;
+    }
+    $('#queue-status').textContent =
+      `${exportQueue.filter((i) => i.status === 'Done').length} completed. Finished files are kept; remaining items can be retried.`;
+  } catch (e) {
+    $('#queue-status').textContent = e.message;
+  } finally {
+    queueRunning = false;
+    renderQueue();
+    if (!$('#queue-dialog').open) $('#queue-dialog').showModal();
+  }
+};
 function renderLibrary() {
   $('#media-count').textContent = p.media.length;
   $('#library-empty').hidden = !!p.media.length;
@@ -254,6 +434,7 @@ function updateTime() {
   $('#play').textContent = playing ? 'Ⅱ' : '▶';
 }
 function render() {
+  renderCompositions();
   resizeCanvas();
   time = Math.min(time, projectDuration(p));
   renderLibrary();
@@ -494,7 +675,7 @@ async function save(as = false) {
   try {
     pause();
     p.name = $('#project-name').value.trim() || 'Untitled project';
-    const snapshot = clone(p),
+    const snapshot = clone(syncCompositions(p)),
       version = revision,
       file = await api.save(snapshot, as ? null : projectPath);
     if (file) {
@@ -556,22 +737,24 @@ api.onExportProgress((value) => {
         ? 'Finalizing MP4…'
         : 'Starting native renderer…';
 });
-async function exportVideo(options) {
-  if (exporting || !p.clips.length) return;
+async function exportVideo(options, source = p) {
+  if (exporting || !source.clips.length) return false;
   pause();
-  if (!p.clips.some((c) => c.slot < slots(p))) {
+  if (!source.clips.some((c) => c.slot < slots(source))) {
     toast('Move a clip into a visible cell before exporting.');
     return;
   }
   try {
-    validateProject(p);
-    options = validateExport(p, options);
+    validateProject(source);
+    options = validateExport(source, options);
     exporting = true;
     cancelled = false;
     document.body.classList.add('exporting');
     $('#export-dialog').showModal();
     $('#export-title').textContent = 'Making it share-worthy.';
-    $('#export-description').textContent = 'Rendering directly with the native video engine.';
+    $('#export-description').textContent = queueRunning
+      ? 'Exporting ' + source.name + ' from the queue.'
+      : 'Rendering directly with the native video engine.';
     $('#export-size').textContent = options.width + ' × ' + options.height;
     $('#export-fps-label').textContent = options.fps + ' FPS';
     $('#export-progress').value = 0;
@@ -581,13 +764,13 @@ async function exportVideo(options) {
     $('#cancel-export').disabled = false;
     $('#reveal-export').hidden = true;
     $('#close-export').hidden = true;
-    const assets = await exportAssets(rangeProject(p, options.start, options.end));
+    const assets = await exportAssets(rangeProject(source, options.start, options.end));
     if (cancelled) {
       $('#export-dialog').close();
       return;
     }
     exportBegan = performance.now();
-    const file = await api.exportNative(clone(p), assets, options);
+    const file = await api.exportNative(clone(source), assets, options);
     if (!file) {
       $('#export-dialog').close();
       return;
@@ -601,9 +784,11 @@ async function exportVideo(options) {
     $('#reveal-export').hidden = false;
     $('#close-export').hidden = false;
     toast('Export complete: ' + file);
+    return true;
   } catch (e) {
     $('#export-dialog').close();
     toast(cancelled ? 'Export canceled.' : 'Export failed: ' + e.message);
+    return false;
   } finally {
     exporting = false;
     document.body.classList.remove('exporting');
@@ -976,6 +1161,7 @@ const exportPanel = setupExportPanel({
   pause,
   play,
   onExport: exportVideo,
+  onQueue: queueCurrent,
   compositor,
 });
 function renderPresets(selectedId = '') {

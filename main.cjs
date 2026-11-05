@@ -323,6 +323,42 @@ app.whenReady().then(async () => {
     return storage.savePreset(name, validateStyle(style), id);
   });
   handle('preset-delete', (id) => storage.deletePreset(id));
+  const queueTargets = new Map();
+  handle('queue-folder', async (names) => {
+    if (
+      !Array.isArray(names) ||
+      !names.length ||
+      names.length > 200 ||
+      names.some((n) => typeof n !== 'string')
+    )
+      throw Error('Invalid queue.');
+    const choice = await dialog.showOpenDialog(win, {
+      title: 'Choose export folder',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (choice.canceled) return null;
+    queueTargets.clear();
+    const tokens = [];
+    for (let i = 0; i < names.length; i++) {
+      const safe =
+        names[i]
+          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '-')
+          .replace(/[. ]+$/g, '')
+          .slice(0, 80) || 'Composition';
+      const token = randomUUID();
+      let target = path.join(choice.filePaths[0], `${String(i + 1).padStart(2, '0')}-${safe}.mp4`);
+      if (
+        await fs.stat(target).then(
+          () => true,
+          () => false,
+        )
+      )
+        target = target.slice(0, -4) + '-' + token.slice(0, 8) + '.mp4';
+      queueTargets.set(token, target);
+      tokens.push(token);
+    }
+    return tokens;
+  });
   handle('export-native', async (project, assets, rawOptions) => {
     if (exportJob) throw Error('An export is already running.');
     const { validateProject } = await import('./src/model.mjs');
@@ -333,11 +369,16 @@ app.whenReady().then(async () => {
     const authorized = new Set(allowed.values());
     for (const m of p.media)
       if (!authorized.has(m.path)) throw Error('Open the recording before exporting.');
-    const d = await dialog.showSaveDialog(win, {
-      title: 'Export muted MP4 · ' + p.fps + ' fps',
-      defaultPath: p.name + '.mp4',
-      filters: [{ name: 'MP4 video', extensions: ['mp4'] }],
-    });
+    const queuedPath = rawOptions?.queueToken ? queueTargets.get(rawOptions.queueToken) : null;
+    if (rawOptions?.queueToken && !queuedPath) throw Error('Choose the queue export folder again.');
+    if (queuedPath) queueTargets.delete(rawOptions.queueToken);
+    const d = queuedPath
+      ? { filePath: queuedPath, canceled: false }
+      : await dialog.showSaveDialog(win, {
+          title: 'Export muted MP4 · ' + p.fps + ' fps',
+          defaultPath: p.name + '.mp4',
+          filters: [{ name: 'MP4 video', extensions: ['mp4'] }],
+        });
     if (d.canceled) return null;
     if (
       p.media.some(

@@ -13,6 +13,7 @@ export function setupExportPanel({
   pause,
   play,
   onExport,
+  onQueue,
   compositor,
 }) {
   const dialog = $('#export-settings');
@@ -249,6 +250,19 @@ export function setupExportPanel({
       const o = options();
       close();
       onExport(o);
+    } catch (e) {
+      $('#range-error').textContent = e.message;
+    }
+  };
+  const queueButton = document.createElement('button');
+  queueButton.id = 'add-to-queue';
+  queueButton.textContent = 'Add to export queue';
+  $('#begin-export').before(queueButton);
+  queueButton.onclick = () => {
+    try {
+      const o = options();
+      close();
+      onQueue(o);
     } catch (e) {
       $('#range-error').textContent = e.message;
     }

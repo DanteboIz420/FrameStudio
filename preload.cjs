@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('studio', {
   deletePreset: (id) => ipcRenderer.invoke('preset-delete', id),
   open: () => ipcRenderer.invoke('open'),
   exportNative: (p, assets, options) => ipcRenderer.invoke('export-native', p, assets, options),
+  queueFolder: (names) => ipcRenderer.invoke('queue-folder', names),
   onExportProgress: (fn) => ipcRenderer.on('export-progress', (_, value) => fn(value)),
   exportCancel: () => ipcRenderer.invoke('export-cancel'),
   revealExport: () => ipcRenderer.invoke('reveal-export'),

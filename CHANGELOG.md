@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 — Compositions and batch export
+
+- Keep independent timelines, canvas sizes and styles in one project, with a shared recording library.
+- Create compositions from trimmed clips using the timeline context menu; duplicate, rename and switch compositions.
+- Save and recover every composition together; older projects open as one composition.
+- Queue snapshots with per-video ranges, resolutions, FPS and quality, or add all nonempty compositions.
+- Choose one folder and render separate muted MP4s sequentially, with cancellation and retry for unfinished items.
+
 ## 1.2.2 — Windows ZIP compatibility
 
 - Package the portable app with Windows’ ZIP implementation, without leading `./` directory entries.

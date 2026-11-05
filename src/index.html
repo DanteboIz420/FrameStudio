@@ -31,6 +31,21 @@
     </header>
     <main>
       <aside class="library">
+        <div class="composition-browser">
+          <div class="panel-heading">
+            <span>Compositions</span
+            ><button id="new-composition" title="New empty composition">＋</button>
+          </div>
+          <div id="composition-list"></div>
+          <div class="composition-actions">
+            <button id="rename-composition">Rename</button
+            ><button id="duplicate-composition">Duplicate</button
+            ><button id="delete-composition">Delete</button>
+          </div>
+          <button id="show-queue" class="import-button">
+            Export queue <span id="queue-count">0</span>
+          </button>
+        </div>
         <div class="panel-heading">
           <span>Media library</span><span id="media-count" class="count">0</span>
         </div>
@@ -464,6 +479,31 @@
         <button id="later-recovery" class="quiet">Later</button
         ><button id="discard-recovery" class="quiet">Discard selected</button
         ><button id="restore-recovery" class="primary">Restore session</button>
+      </div>
+    </dialog>
+    <dialog id="composition-name-dialog">
+      <h2 id="composition-name-title">New composition</h2>
+      <label class="field-label">Name<input id="composition-name" maxlength="120" /></label>
+      <div class="dialog-actions">
+        <button id="cancel-composition-name">Cancel</button
+        ><button id="confirm-composition-name" class="primary">Create</button>
+      </div>
+    </dialog>
+    <div id="clip-menu" hidden role="menu">
+      <button id="clip-to-composition" role="menuitem">Create composition from clip</button>
+    </div>
+    <dialog id="queue-dialog">
+      <span class="eyebrow">ONE PROJECT. MANY VIDEOS.</span>
+      <h2>Export queue</h2>
+      <p>
+        Queue snapshots keep the cuts and settings you added. Re-add a composition after editing it
+        to update its queued version.
+      </p>
+      <div id="queue-list"></div>
+      <p id="queue-status"></p>
+      <div class="dialog-actions">
+        <button id="close-queue">Close</button><button id="queue-all">Add all compositions</button
+        ><button id="run-queue" class="primary">Choose folder & export all</button>
       </div>
     </dialog>
     <script type="module" src="app.mjs"></script>

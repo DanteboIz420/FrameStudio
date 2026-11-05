@@ -8,7 +8,7 @@ A small desktop editor for turning website screen recordings into videos worth s
 
 **Trim it. Speed it up. Give it some breathing room.**
 
-<a href="https://github.com/DanteboIz420/FrameStudio/releases/download/v1.2.2/Frame-Studio-1.2.2-Windows-x64.zip"><img src="docs/media/download-windows.svg" alt="Download for Windows x64" width="244" height="48"></a>
+<a href="https://github.com/DanteboIz420/FrameStudio/releases/download/v1.3.0/Frame-Studio-1.3.0-Windows-x64.zip"><img src="docs/media/download-windows.svg" alt="Download for Windows x64" width="244" height="48"></a>
 
 [Latest release](https://github.com/DanteboIz420/FrameStudio/releases/latest) · [Quick start](#quick-start) · [How exports work](#how-exports-work) · [Build from source](#build-from-source)
 
@@ -159,3 +159,11 @@ The main walkthrough and outcomes above use the creator’s provided recordings.
 Frame Studio application code and original bundled concept samples are [MIT licensed](LICENSE). The creator’s walkthrough/outcome recordings have [separate media terms](docs/media/LICENSE.md). Third-party software, including Electron and the bundled FFmpeg engine, retains its own licenses. See [third-party notices](THIRD_PARTY_NOTICES.md).
 
 Built by [DanteboIz420](https://github.com/DanteboIz420).
+
+### Multiple videos in one project
+
+Use **Compositions** above the media library to create, name, duplicate, delete and switch edits. Each composition has its own timeline, canvas, layout and styling; recordings are shared. Right-click a trimmed timeline clip and choose **Create composition from clip** to make a separate single-video composition starting at zero, with its trim and speed preserved. The original stays intact. **Save project** and autosave preserve every composition in one `.frame` file. Older projects open as one composition; use version 1.3 or later to edit multi-composition files.
+
+In **Export video**, set the range, resolution, FPS and quality, then choose **Add to export queue**. Or open **Export queue → Add all compositions** to queue all nonempty compositions at full length with their canvas size/FPS and High quality. Choose an output folder once to render separate, muted MP4s in order. Existing filenames get a unique suffix. Cancellation stops the queue and preserves finished files; unfinished items can be retried.
+
+The queue holds snapshots for the current app session. Editing a composition does not change an already queued snapshot: remove it and add the updated version. Save projects to keep compositions between sessions.
